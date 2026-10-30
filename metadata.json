@@ -1,0 +1,6 @@
+{
+  "name": "Halftone Maker Studio - Adobe Illustrator Extension",
+  "description": "Professional Adobe Illustrator CEP extension for converting raster images into clean, editable vector halftones and fixing touching, distorted, or irregular dots.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

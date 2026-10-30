@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExtensionManifest Version="7.0" ExtensionBundleId="com.precisionhalftone.studio" ExtensionBundleVersion="1.0.0"
+    ExtensionBundleName="Precision Halftone Studio" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <ExtensionList>
+        <Extension Id="com.precisionhalftone.studio.panel" Version="1.0.0" />
+    </ExtensionList>
+    <ExecutionEnvironment>
+        <HostList>
+            <!-- Adobe Illustrator CC 2018 through 2026/2027+ -->
+            <Host Name="ILST" Version="[19.0,99.9]" />
+        </HostList>
+        <LocaleList>
+            <Locale Code="All" />
+        </LocaleList>
+        <RequiredRuntimeList>
+            <RequiredRuntime Name="CSXS" Version="9.0" />
+        </RequiredRuntimeList>
+    </ExecutionEnvironment>
+    <DispatchInfoList>
+        <Extension Id="com.precisionhalftone.studio.panel">
+            <DispatchInfo>
+                <Resources>
+                    <MainPath>./client/index.html</MainPath>
+                    <ScriptPath>./jsx/main.jsx</ScriptPath>
+                    <CEPEngineRefs>
+                        <CEPEngineRef Id="PrecisionHalftoneNodeEngine" />
+                    </CEPEngineRefs>
+                </Resources>
+                <Lifecycle>
+                    <AutoVisible>true</AutoVisible>
+                </Lifecycle>
+                <UI>
+                    <Type>Panel</Type>
+                    <Menu>Precision Halftone Studio</Menu>
+                    <Geometry>
+                        <Size>
+                            <Height>740</Height>
+                            <Width>380</Width>
+                        </Size>
+                        <MinSize>
+                            <Height>450</Height>
+                            <Width>320</Width>
+                        </MinSize>
+                        <MaxSize>
+                            <Height>1400</Height>
+                            <Width>900</Width>
+                        </MaxSize>
+                    </Geometry>
+                    <Icons>
+                        <Icon Type="Normal">./assets/icons/icon-normal.png</Icon>
+                        <Icon Type="RollOver">./assets/icons/icon-rollover.png</Icon>
+                        <Icon Type="DarkNormal">./assets/icons/icon-dark.png</Icon>
+                    </Icons>
+                </UI>
+            </DispatchInfo>
+        </Extension>
+    </DispatchInfoList>
+</ExtensionManifest>

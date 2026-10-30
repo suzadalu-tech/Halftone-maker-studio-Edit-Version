@@ -1,0 +1,235 @@
+================================================================================
+ONE-CLICK WINDOWS .EXE SOFTWARE BUILD SETUP GUIDE
+(যেকোনো ওয়েব অ্যাপ্লিকেশনে একক্লিকে Windows .EXE সফটওয়্যার বানানোর পূর্ণাঙ্গ গাইড)
+================================================================================
+
+এই ডকুমেন্টে বিস্তারিত দেওয়া হলো এই প্রোজেক্টে এক-ক্লিকে (One-Click) উইন্ডোজ সফটওয়্যার (.exe)
+তৈরি করার জন্য ঠিক কী কী ফাইল ও কোড যুক্ত করা হয়েছে। ভবিষ্যৎ যে কোনো AI, ডেভেলপার বা
+যে কেউ এই ফাইলটি পড়লে সহজেই যেকোনো React/Vite/Web অ্যাপকে 1-ক্লিকে .exe বানিয়ে ফেলতে পারবে।
+
+--------------------------------------------------------------------------------
+১. যে যে নতুন ফাইল যুক্ত করা হয়েছে (Files Added)
+--------------------------------------------------------------------------------
+
+১. "Build windows exe.bat" (এবং "build-windows-exe.bat")
+   - অবস্থান: রুট ডিরেক্টরি (/)
+   - কাজ: উইন্ডোজে মাউস দিয়ে ডাবল ক্লিক করলেই সম্পূর্ণ অটোমেটিক প্রসেস শুরু হয়:
+     (ক) npm install দিয়ে প্রয়োজনীয় প্যাকেজ নামায়।
+     (খ) npm run build দিয়ে Vite প্রোডাকশন বান্ডেল তৈরি করে (dist ফোল্ডারে)।
+     (গ) npx electron-builder --win রান করে Windows .exe ফাইল বানিয়ে release ফোল্ডারে রেখে দেয়।
+   - কোড:
+     @echo off
+     setlocal enabledelayedexpansion
+     echo ========================================================
+     echo    Halftone Maker - Windows .exe Desktop Builder
+     echo ========================================================
+     echo.
+     echo [1/3] Installing dependencies...
+     call npm install
+     if %ERRORLEVEL% NEQ 0 (
+         echo [ERROR] Failed to install dependencies.
+         pause
+         exit /b %ERRORLEVEL%
+     )
+     echo.
+     echo [2/3] Building production assets...
+     call npm run build
+     if %ERRORLEVEL% NEQ 0 (
+         echo [ERROR] Build step failed.
+         pause
+         exit /b %ERRORLEVEL%
+     )
+     echo.
+     echo [3/3] Generating Windows .exe executable files...
+     call npx electron-builder --win
+     if %ERRORLEVEL% NEQ 0 (
+         echo [ERROR] Packaging failed.
+         pause
+         exit /b %ERRORLEVEL%
+     )
+     echo.
+     echo ========================================================
+     echo [SUCCESS] Your software is ready in the "release" folder!
+     echo ========================================================
+     if exist "release" (
+         dir /b "release\*.exe"
+     )
+     echo.
+     pause
+
+২. "electron/main.js"
+   - অবস্থান: /electron/main.js
+   - কাজ: এটি Electron-এর মেইন প্রসেস ফাইল। ডেস্কটপ উইন্ডো ওপেন করে, dist/index.html লোড করে,
+     উইন্ডো সাইজ ও অ্যাপ আইকন সেট করে এবং ব্রাউজার ছাড়া স্বাধীন ডেস্কটপ অ্যাপ হিসেবে রান করায়।
+   - কোড:
+     import { app, BrowserWindow, shell } from 'electron';
+     import path from 'path';
+     import fs from 'fs';
+     import { fileURLToPath } from 'url';
+
+     const __filename = fileURLToPath(import.meta.url);
+     const __dirname = path.dirname(__filename);
+
+     function getAppIcon() {
+       const icoPath = path.join(__dirname, '../public/icon.ico');
+       const favPath = path.join(__dirname, '../public/favicon.ico');
+       const pngPath = path.join(__dirname, '../public/icon.png');
+       if (fs.existsSync(icoPath)) return icoPath;
+       if (fs.existsSync(favPath)) return favPath;
+       if (fs.existsSync(pngPath)) return pngPath;
+       return undefined;
+     }
+
+     function createWindow() {
+       const win = new BrowserWindow({
+         width: 1440,
+         height: 920,
+         minWidth: 1024,
+         minHeight: 700,
+         title: 'Halftone Maker',
+         autoHideMenuBar: true,
+         backgroundColor: '#0f172a',
+         icon: getAppIcon(),
+         webPreferences: {
+           nodeIntegration: false,
+           contextIsolation: true,
+           sandbox: true,
+         },
+       });
+
+       win.webContents.setWindowOpenHandler(({ url }) => {
+         if (url.startsWith('http://') || url.startsWith('https://')) {
+           shell.openExternal(url);
+         }
+         return { action: 'deny' };
+       });
+
+       if (process.env.VITE_DEV_SERVER_URL) {
+         win.loadURL(process.env.VITE_DEV_SERVER_URL);
+       } else {
+         const distIndexPath = path.join(__dirname, '../dist/index.html');
+         win.loadFile(distIndexPath);
+       }
+     }
+
+     app.whenReady().then(createWindow);
+
+     app.on('window-all-closed', () => {
+       if (process.platform !== 'darwin') {
+         app.quit();
+       }
+     });
+
+     app.on('activate', () => {
+       if (BrowserWindow.getAllWindows().length === 0) {
+         createWindow();
+       }
+     });
+
+৩. "scripts/postinstall.js"
+   - অবস্থান: /scripts/postinstall.js
+   - কাজ: ইউজার যখন উইন্ডোজ পিসিতে টার্মিনালে শুধু "npm install" কমান্ড দেয়, তখন প্যাকেজ
+     ইনস্টল শেষ হওয়ামাত্র স্বয়ংক্রিয়ভাবে .exe বিল্ড করার স্ক্রিপ্টটি ফায়ার হয়।
+   - কোড:
+     import { execSync } from 'child_process';
+     console.log('----------------------------------------------------');
+     console.log(' Halftone Maker Desktop Packaging Environment Ready');
+     console.log('----------------------------------------------------');
+     if (process.platform === 'win32' || process.env.AUTO_BUILD_EXE === 'true') {
+       console.log('🚀 Windows system detected! Automatically compiling .exe files...');
+       try {
+         console.log('📦 Step 1/2: Building production web bundle (vite build)...');
+         execSync('npm run build', { stdio: 'inherit' });
+         console.log('🔨 Step 2/2: Building Windows .exe installer and portable executable...');
+         execSync('npx electron-builder --win', { stdio: 'inherit' });
+         console.log('\n====================================================');
+         console.log('🎉 SUCCESS! .exe files have been created in the "release" folder:');
+         console.log('   📂 release/Halftone Maker Setup 1.0.0.exe (Installer)');
+         console.log('   📂 release/Halftone Maker 1.0.0.exe (Portable)');
+         console.log('====================================================\n');
+       } catch (err) {
+         console.warn('\n⚠️ Auto-build note: If you are offline, run: npm run build:exe\n');
+       }
+     }
+
+--------------------------------------------------------------------------------
+২. package.json এ কী কী যোগ/পরিবর্তন করা হয়েছে
+--------------------------------------------------------------------------------
+
+১. devDependencies এ যোগ করা হয়েছে:
+   - "electron": "^44.7.0"
+   - "electron-builder": "^26.15.3"
+   - "cross-env": "^10.1.0"
+
+২. "main" এন্ট্রি যুক্ত করা হয়েছে:
+   "main": "electron/main.js"
+
+৩. "scripts" সেকশনে নতুন স্ক্রিপ্ট যুক্ত করা হয়েছে:
+   "postinstall": "node scripts/postinstall.js",
+   "build:exe": "vite build && electron-builder --win",
+   "dist": "vite build && electron-builder --win",
+   "dist:portable": "vite build && electron-builder --win portable",
+   "electron:build": "vite build && electron-builder --win",
+   "electron:dev": "electron ."
+
+৪. electron-builder এর জন্য "build" কনফিগারেশন ব্লক যুক্ত করা হয়েছে:
+   "build": {
+     "appId": "com.halftonemaker.app",
+     "productName": "Halftone Maker",
+     "directories": {
+       "output": "release"
+     },
+     "files": [
+       "dist/**/*",
+       "electron/**/*"
+     ],
+     "win": {
+       "icon": "public/icon.ico",
+       "target": [
+         "nsis",
+         "portable"
+       ]
+     },
+     "nsis": {
+       "oneClick": false,
+       "perMachine": false,
+       "allowToChangeInstallationDirectory": true,
+       "createDesktopShortcut": true,
+       "createStartMenuShortcut": true,
+       "shortcutName": "Halftone Maker"
+     }
+   }
+
+--------------------------------------------------------------------------------
+৩. vite.config.ts এ প্রয়োজনীয় সেটিংস
+--------------------------------------------------------------------------------
+Electron লোকাল ফাইল পাথ (file://) থেকে সঠিকভাবে এসেট লোড করার জন্য vite.config.ts এ:
+base: './'
+থাকা আবশ্যক, যা এই প্রজেক্টে যথাযথভাবে কনফিগার করা আছে।
+
+--------------------------------------------------------------------------------
+৪. শেষ ব্যবহারকারী (User) কীভাবে সফটওয়্যার বানাবেন?
+--------------------------------------------------------------------------------
+
+পদ্ধতি ১ (সবচেয়ে সহজ - একদম এক ক্লিকে):
+- ফাইল ম্যানেজারে গিয়ে "Build windows exe.bat" ফাইলটির উপর ডাবল ক্লিক করুন।
+- এটি স্বয়ংক্রিয়ভাবে সব ডিপেন্ডেন্সি নামিয়ে, বিল্ড করে "release" ফোল্ডারে .exe বানিয়ে দেবে।
+
+পদ্ধতি ২ (শুধু npm install রান করে):
+- উইন্ডোজ কমান্ড প্রম্পট বা টার্মিনালে রান করুন:
+  npm install
+- ইনস্টল শেষ হওয়া মাত্র postinstall হুকের মাধ্যমে স্বয়ংক্রিয়ভাবে .exe ফাইল তৈরি হয়ে যাবে।
+
+পদ্ধতি ৩ (ম্যানুয়াল কমান্ড):
+- npm run build:exe
+
+--------------------------------------------------------------------------------
+৫. বিল্ড করা ফাইলগুলো কোথায় পাওয়া যাবে?
+--------------------------------------------------------------------------------
+প্রজেক্টের "release" ফোল্ডারে দুটি ফাইল পাবেন:
+১. "release/Halftone Maker Setup 1.0.0.exe" -> উইন্ডোজ ইনস্টলার (ডেস্কটপ ও স্টার্ট মেনু শর্টকাট সহ)।
+2. "release/Halftone Maker 1.0.0.exe" -> পোর্টেবল ভার্সন (কোনো ইনস্টলেশন ছাড়াই সরাসরি রান হবে)।
+
+================================================================================
+END OF INSTRUCTIONS - READY FOR USE
+================================================================================

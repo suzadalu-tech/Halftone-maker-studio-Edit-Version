@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Precision Halftone Studio</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="lib/CSInterface.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <div class="panel-header">
+    <div class="brand-title">PRECISION HALFTONE</div>
+    <div class="badge">CEP 9.4+ / ILST</div>
+  </div>
+
+  <!-- Mode Selector -->
+  <div class="section">
+    <div class="section-title">PROCESSING ENGINE</div>
+    <div class="segmented-control" id="modeSelector">
+      <button type="button" id="btnModePrecision" class="active">Precision Vector</button>
+      <button type="button" id="btnModeNative">Illustrator Native</button>
+    </div>
+  </div>
+
+  <!-- Input Section -->
+  <div class="section">
+    <div class="section-title">INPUT IMAGE</div>
+    <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+      <button type="button" class="btn-secondary" id="btnSelectFile" style="flex:1;">+ Add Image</button>
+      <button type="button" class="btn-secondary" id="btnTestPattern" style="flex:1;">Test Pattern</button>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" style="display:none;">
+    <div id="fileInfo" style="color:var(--text-muted); font-size:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">No image loaded</div>
+  </div>
+
+  <!-- Live Canvas Preview Box -->
+  <div class="section">
+    <div class="section-title" style="display:flex; justify-content:space-between;">
+      <span>LIVE PREVIEW</span>
+      <span id="previewStatus" style="font-weight:normal; text-transform:none;">Ready</span>
+    </div>
+    <div class="preview-box">
+      <canvas id="previewCanvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Image Adjustments -->
+  <div class="section">
+    <div class="section-title">IMAGE ADJUSTMENTS</div>
+    <label class="checkbox-row">
+      <input type="checkbox" id="chkGrayscale" checked>
+      <span>Grayscale Conversion</span>
+    </label>
+    <div class="row">
+      <span class="label">Brightness</span>
+      <div class="slider-container">
+        <input type="range" id="slBrightness" min="-100" max="100" value="0">
+        <span class="num-display" id="valBrightness">0</span>
+      </div>
+    </div>
+    <div class="row">
+      <span class="label">Contrast</span>
+      <div class="slider-container">
+        <input type="range" id="slContrast" min="-100" max="100" value="10">
+        <span class="num-display" id="valContrast">+10</span>
+      </div>
+    </div>
+    <div class="row">
+      <span class="label">Gamma</span>
+      <div class="slider-container">
+        <input type="range" id="slGamma" min="0.2" max="2.5" step="0.05" value="1.0">
+        <span class="num-display" id="valGamma">1.0</span>
+      </div>
+    </div>
+    <label class="checkbox-row" style="margin-top:4px;">
+      <input type="checkbox" id="chkInvert">
+      <span>Invert Halftone</span>
+    </label>
+  </div>
+
+  <!-- Halftone Settings -->
+  <div class="section">
+    <div class="section-title">HALFTONE GRID & GEOMETRY</div>
+    <div class="row">
+      <span class="label">Grid Type</span>
+      <div class="segmented-control" style="width:55%; margin-bottom:0;">
+        <button type="button" id="gridSquare" class="active">Square</button>
+        <button type="button" id="gridOffset">Offset</button>
+      </div>
+    </div>
+    <div class="row" style="margin-top:6px;">
+      <span class="label">Cell Size (px)</span>
+      <div class="slider-container">
+        <input type="range" id="slCellSize" min="3" max="30" value="8">
+        <span class="num-display" id="valCellSize">8px</span>
+      </div>
+    </div>
+    <div class="row">
+      <span class="label">Max Dot Size</span>
+      <div class="slider-container">
+        <input type="range" id="slMaxDot" min="1" max="80" step="0.5" value="28">
+        <span class="num-display" id="valMaxDot">28</span>
+      </div>
+    </div>
+    <div class="row">
+      <span class="label">Min Gap</span>
+      <div class="slider-container">
+        <input type="range" id="slMinGap" min="0.5" max="8" step="0.5" value="1.5">
+        <span class="num-display" id="valMinGap">1.5px</span>
+      </div>
+    </div>
+    <div class="row">
+      <span class="label">Angle</span>
+      <div class="slider-container">
+        <input type="range" id="slAngle" min="-45" max="45" value="0">
+        <span class="num-display" id="valAngle">0°</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dot Cleanup & Artifact Repair -->
+  <div class="section">
+    <div class="section-title">DOT CLEANUP & ARTIFACT REPAIR</div>
+    <label class="checkbox-row">
+      <input type="checkbox" id="chkEnableCleanup" checked>
+      <span>Enable Dot Cleanup</span>
+    </label>
+    <label class="checkbox-row">
+      <input type="checkbox" id="chkSeparateTouching" checked>
+      <span>Separate Touching Dots (Collision Prevention)</span>
+    </label>
+    <label class="checkbox-row">
+      <input type="checkbox" id="chkRemoveFragments" checked>
+      <span>Remove Tiny Fragments</span>
+    </label>
+    <label class="checkbox-row">
+      <input type="checkbox" id="chkNormalizeIrregular" checked>
+      <span>Normalize Distorted / Skewed Dots</span>
+    </label>
+    <label class="checkbox-row">
+      <input type="checkbox" id="chkForceCircles" checked>
+      <span>Force Perfect Circles (W = H = 2R)</span>
+    </label>
+  </div>
+
+  <!-- Actions -->
+  <div class="section" style="border-bottom:none;">
+    <button type="button" class="btn-primary" id="btnProcess">GENERATE VECTOR ARTWORK</button>
+    <div style="display:flex; gap:6px; margin-top:8px;">
+      <button type="button" class="btn-secondary" id="btnCleanSelection" style="flex:1;">Clean Selected</button>
+      <button type="button" class="btn-secondary" id="btnReset" style="flex:1;">Reset</button>
+    </div>
+  </div>
+
+  <!-- Log / Quality status -->
+  <div class="section" style="background:#1a1a1a; padding:8px 12px;">
+    <div id="qualityStatus" style="font-family:monospace; font-size:10px; color:#4ade80;">
+      ✓ Ready to generate precision vector halftones
+    </div>
+  </div>
+
+  <script src="../core/halftoneCore.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
